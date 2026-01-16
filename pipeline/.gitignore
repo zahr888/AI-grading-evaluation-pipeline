@@ -1,0 +1,12 @@
+# Artifacts
+artifacts/
+logs/*.log
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/

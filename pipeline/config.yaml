@@ -1,0 +1,44 @@
+# =============================================================================
+# Pipeline Configuration
+# =============================================================================
+
+model:
+  name: "llama3.1:8b"
+  timeout: 60
+  retries: 2
+
+paths:
+  samples_csv: "../samples10.csv"
+  submissions_dir: "../submissions"
+  prompt_template: "../prompts/grading_prompt_template.txt"
+
+artifacts:
+  base_dir: "artifacts"
+  data_dir: "artifacts/data"
+  predictions_dir: "artifacts/predictions"
+  metrics_dir: "artifacts/metrics"
+  plots_dir: "artifacts/plots"
+
+logging:
+  log_file: "logs/pipeline.log"
+
+evaluation:
+  dimensions:
+    - "Correctness"
+    - "Readability"
+    - "Code Elegance"
+    - "Documentation"
+  accuracy_threshold: 5
+  grade_map:
+    "A++": 100
+    "A+": 97
+    "A": 93
+    "A-": 90
+    "B+": 87
+    "B": 83
+    "B-": 80
+    "C+": 77
+    "C": 73
+    "C-": 70
+    "D": 60
+    "F": 40
