@@ -1,159 +1,137 @@
 # AI Grading Evaluation Pipeline
 
-> Can an AI grade student code as well as a human? This pipeline finds out.
+> This is an experimental/testing project to explore how well an AI can grade student code and to practice simple MLOps patterns.
+> The goal is to create a small, reproducible evaluation pipeline you can run locally and extend later.
 
 ---
 
-## What Does This Project Do?
+## What this project does 
 
-This pipeline compares **AI grading** (using Ollama LLM) vs **human grading** for student code submissions.
+It compares AI-generated grades (via a local Ollama model) with human instructor grades for Java assignments. The pipeline runs the evaluation end-to-end and saves predictions, metrics and simple charts so you can see where AI helps and where it fails.
 
-```
-Student Code → AI grades it → Compare with human grades → How accurate was AI?
-```
-
-**Example Output:**
-- "AI was within 5 points of human grades 72% of the time"
-- "MAE (error) = 4.8 points on Readability"
-
----
-
-## Project Structure
+High-level flow:
 
 ```
-Gradini/
-├── samples10.csv              # Human grades (CSV)
-├── submissions/               # Student Java code
-│   ├── 18~19_Submission_13/
-│   ├── 18~19_Submission_15/
-│   └── 18~19_Submission_16/
-├── prompts/                   # LLM prompt template
-│   └── grading_prompt_template.txt
-│
-└── mlops_pipeline/            # ← This pipeline
-    ├── src/
-    │   ├── data/prepare.py           # Step 1: Load data
-    │   ├── grading/ollama_grader.py  # Step 2: AI grading
-    │   ├── evaluation/
-    │   │   ├── normalization.py      # Step 3: Convert grades
-    │   │   └── metrics.py            # Step 4: Calculate accuracy
-    │   ├── visualization/plots.py    # Step 5: Generate charts
-    │   └── pipeline.py               # Main entry point
-    ├── config.yaml            # All settings (model, paths, etc.)
-    ├── artifacts/             # Output files saved here
-    ├── logs/                  # Log files
-    ├── tests/                 # Unit tests
-    ├── Makefile               # Shortcut commands
-    └── requirements.txt       # Python dependencies
+Student code → AI grades it → Compare to human grades → Metrics + charts
 ```
 
 ---
 
-## How the Pipeline Works (5 Steps)
+## Where the samples come from
+
+Samples are taken from the public Menagerie dataset: [https://github.com/m-messer/Menagerie](https://github.com/m-messer/Menagerie)
+
+The prepared CSV contains rows like:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        pipeline.py                              │
-│                                                                 │
-│  STEP 1: prepare.py                                             │
-│  ─────────────────                                              │
-│  • Read samples10.csv (human grades)                            │
-│  • Read Java files from submissions/                            │
-│  • Combine into one JSON file                                   │
-│                          ↓                                      │
-│  STEP 2: ollama_grader.py                                       │
-│  ────────────────────────                                       │
-│  • Send each submission to Ollama LLM                           │
-│  • Get AI grades: Correctness, Readability, etc.                │
-│  • Save predictions to JSON                                     │
-│                          ↓                                      │
-│  STEP 3: normalization.py                                       │
-│  ────────────────────────                                       │
-│  • Convert letter grades (A, B+, C) to numbers (93, 87, 73)     │
-│  • Average multiple human grades per dimension                  │
-│                          ↓                                      │
-│  STEP 4: metrics.py                                             │
-│  ──────────────────                                             │
-│  • Compare AI grades vs human grades                            │
-│  • Calculate: MAE, RMSE, accuracy %                             │
-│                          ↓                                      │
-│  STEP 5: plots.py                                               │
-│  ────────────────                                               │
-│  • Generate bar charts (MAE per dimension)                      │
-│  • Save as PNG files                                            │
-│                                                                 │
-│  ✅ Done! Check artifacts/ for results                          │
-└─────────────────────────────────────────────────────────────────┘
+Unnamed: 0,assignment_number,comments,skill,participant_id,batch,grade
+0,18.0,"The code uses meaningful identifier names...",Readability,15,1,B+
+0,18.0,"The core requirements ... seem met...",Correctness,15,1,A-
+...
+```
+
+**What that means:** each row is one human comment/grade for a submission (participant_id). The CSV provides multi-dimension human evaluations (Correctness, Readability, Code Elegance, Documentation) plus a textual comment which is great for comparing AI grades and feedback.
+
+---
+
+## What I implemented
+
+I made a lightweight pipeline that is:
+
+* **Modular**: each step is a small, importable module (example: `from src.data.prepare import prepare_data`)
+* **Configurable**: single `config.yaml` holds model name, paths and basic params
+* **Reproducible**: artifacts are saved per run to `artifacts/` with a run id
+* **Logged**: simple structured logs saved to `logs/pipeline.log`
+* **Robust**: failures on a single submission are logged, pipeline continues
+
+New tools/practices I experimented with:
+
+* `Makefile` for convenient commands (`make run`, `make test`)
+* `config.yaml` for centralized config
+* Python `logging` for structured logs
+* Prompt engineering: strict JSON schema and fallback behavior
+* Organizing code as importable modules
+
+---
+
+Here is the **clean, concise replacement section** for the metrics part of your README:
+
+---
+
+## Implemented Metrics (current)
+
+### Per grading dimension
+
+For each dimension (Correctness, Readability, Code Elegance, Documentation), the pipeline computes:
+
+* **MAE**
+* **RMSE**
+* **accuracy_pct**
+
+### Overall run statistics
+
+Across the whole evaluation run:
+
+* **total_predictions** — total number of AI grading attempts
+* **successful** — number of predictions without errors
+* **threshold_used** — accuracy threshold (in points) used for accuracy calculation
+
+> These metrics provide a first, interpretable view of grading accuracy and reliability.
+> In future iterations, additional metrics and deeper analyses will be added.
+
+---
+
+## Project structure (short)
+
+```
+mlops_pipeline/
+├─ src/
+│  ├─ data/prepare.py
+│  ├─ grading/ollama_grader.py
+│  ├─ evaluation/normalization.py
+│  ├─ evaluation/metrics.py
+│  ├─ visualization/plots.py
+│  └─ pipeline.py
+├─ config.yaml
+├─ artifacts/        # data, predictions, metrics, plots per run
+├─ logs/
+├─ tests/
+├─ Makefile
+└─ requirements.txt
 ```
 
 ---
 
-## Prerequisites
+## Quick start (WSL / Linux)
 
-### 1. Python 3.10+
-Check your version:
-```bash
-python --version
-```
+1. Ensure Python 3.10+, Ollama is installed and a model is pulled:
 
-### 2. Ollama (Local LLM)
-Download from: https://ollama.ai
-
-Then pull a model:
 ```bash
 ollama pull llama3.1:8b
 ```
 
-Start Ollama (keep this running):
-```bash
-ollama serve
-```
-
----
-
-## Installation
-
-### Option A: Windows (PowerShell)
-
-```powershell
-cd mlops_pipeline
-pip install -r requirements.txt
-```
-
-### Option B: Linux/WSL (with virtual environment)
+2. Create and activate a virtualenv, install:
 
 ```bash
-cd mlops_pipeline
+# one-line (recommended)
+make install
 
-# Create virtual environment
+# or
+
 python3 -m venv .venv
-
-# Activate it
 source .venv/bin/activate
-
-# Install packages
 pip install -r requirements.txt
 ```
 
----
+3. Run the pipeline:
 
-## Running the Pipeline
+```bash
+# one-line (recommended)
+make run
 
-### Windows (PowerShell)
-
-```powershell
-cd mlops_pipeline
+# or
 python -m src.pipeline
 ```
-
-### Linux/WSL (using Makefile)
-
-```bash
-cd mlops_pipeline
-make install   # First time only
-make run       # Run pipeline
-```
-
 ---
 
 ## Expected Output
@@ -186,7 +164,6 @@ make run       # Run pipeline
 ```
 
 ---
-
 ## Output Files (artifacts/)
 
 After running, check these folders:
@@ -200,94 +177,12 @@ After running, check these folders:
 
 ---
 
-## Configuration (config.yaml)
+## Next steps (planned)
 
-All settings in one file:
-
-```yaml
-model:
-  name: "llama3.1:8b"    # Which Ollama model to use
-  timeout: 60            # Seconds before timeout
-  retries: 2             # Retry on failure
-
-paths:
-  samples_csv: "../samples10.csv"      # Human grades
-  submissions_dir: "../submissions"    # Student code
-  prompt_template: "../prompts/grading_prompt_template.txt"
-
-evaluation:
-  dimensions:            # What to grade
-    - "Correctness"
-    - "Readability"
-    - "Code Elegance"
-    - "Documentation"
-  accuracy_threshold: 5  # "Within X points" counts as accurate
-```
-
+* Add more evaluation metrics (e.g., BERTScore for feedback, calibration metrics)
+* Benchmark additional models and prompt variants
+* Improve feedback similarity with sentence embeddings
+* Add a simple CI step (GitHub Actions) to run unit tests on PRs
+* Optionally add Dockerfile + Makefile target for containerized runs
+* 
 ---
-
-## Commands Reference
-
-| Command | What it does |
-|---------|--------------|
-| `python -m src.pipeline` | Run the full pipeline |
-| `python -m pytest tests/ -v` | Run unit tests |
-| `make run` | (Linux) Run pipeline |
-| `make test` | (Linux) Run tests |
-| `make clean` | (Linux) Delete artifacts |
-
----
-
-## Troubleshooting
-
-### "Timeout after 60s"
-- Make sure Ollama is running: `ollama serve`
-- Try a faster model: change `model.name` to `llama3.2:3b`
-
-### "No such file: samples10.csv"
-- Paths in `config.yaml` should start with `../` (go up one folder)
-
-### "Module not found: matplotlib"
-- Install dependencies: `pip install -r requirements.txt`
-
-### Tests fail
-- Run from `mlops_pipeline/` folder
-- Check Python path with: `python -c "import src.pipeline"`
-
----
-
-## Grade Scale Used
-
-| Grade | Points |
-|-------|--------|
-| A++ | 100 |
-| A+ | 97 |
-| A | 93 |
-| A- | 90 |
-| B+ | 87 |
-| B | 83 |
-| B- | 80 |
-| C+ | 77 |
-| C | 73 |
-| C- | 70 |
-| D | 60 |
-| F | 40 |
-
----
-
-## Why This Design? (MLOps Best Practices)
-
-| Practice | How we do it |
-|----------|--------------|
-| **No hardcoded values** | Everything in `config.yaml` |
-| **Reproducible** | Same config = same results |
-| **Modular** | Each step is a separate file |
-| **Logged** | Check `logs/pipeline.log` |
-| **Tested** | Unit tests in `tests/` |
-| **One command** | `make run` or `python -m src.pipeline` |
-
----
-
-## License
-
-MIT - Use freely!
