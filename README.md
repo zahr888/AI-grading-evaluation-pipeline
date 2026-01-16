@@ -54,10 +54,6 @@ New tools/practices I experimented with:
 
 ---
 
-Here is the **clean, concise replacement section** for the metrics part of your README:
-
----
-
 ## Implemented Metrics (current)
 
 ### Per grading dimension
@@ -132,6 +128,7 @@ make run
 # or
 python -m src.pipeline
 ```
+
 ---
 
 ## Expected Output
@@ -164,6 +161,7 @@ python -m src.pipeline
 ```
 
 ---
+
 ## Output Files (artifacts/)
 
 After running, check these folders:
@@ -184,5 +182,5 @@ After running, check these folders:
 * Improve feedback similarity with sentence embeddings
 * Add a simple CI step (GitHub Actions) to run unit tests on PRs
 * Optionally add Dockerfile + Makefile target for containerized runs
-* 
+
 ---
